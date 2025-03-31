@@ -84,7 +84,7 @@ app.post('/generateQR', async (req, res) => {
         const decimalPart = generateRandomDecimal();
         const finalAmount = parseFloat(`${Math.floor(amount)}.${decimalPart}`);
 
-        const mobileNumber = '0946737973';
+        const mobileNumber = 'เบอร์ของคุณ';
         const payload = generatePayload(mobileNumber, { amount: finalAmount });
         const options = {
             color: {
