@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Payment System</title>
+    <script src="https://unpkg.com/tesseract.js@v5.1.0/dist/tesseract.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #03a651;
+            --secondary-color: #028a43;
+            --accent-color: #039be5;
+            --background-color: #f8f9fa;
+            --card-color: #ffffff;
+            --text-color: #333333;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Prompt', 'Kanit', 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .container {
+            padding: 20px 0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .credit-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .credit-amount {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .main-content {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .card {
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 24px;
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .card-title .icon {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .qr-code {
+            width: 220px;
+            height: 220px;
+            margin: 20px 0;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 12px;
+            background-color: white;
+        }
+        
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .qr-amount {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 10px 0;
+        }
+        
+        .qr-info {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .bank-logo {
+            height: 40px;
+            margin: 10px 5px;
+        }
+        
+        .bank-logos {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        
+        .slip-verification {
+            margin-top: 20px;
+            display: none;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        
+        .verification-header {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .verification-header .icon {
+            margin-right: 8px;
+        }
+        
+        .slip-result {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .slip-image-container {
+            flex: 0 0 auto;
+            width: 120px;
+            height: 150px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .slip-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .slip-details {
+            flex: 1;
+        }
+        
+        .slip-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .slip-label {
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .slip-value {
+            font-weight: 600;
+        }
+        
+        .slip-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            border: 2px solid;
+            text-align: center;
+        }
+        
+        .status-success {
+            background-color: rgba(3, 166, 81, 0.1);
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .status-error {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: #d32f2f;
+            border-color: #d32f2f;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .upload-icon {
+            font-size: 40px;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+        
+        .upload-text {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 300px;
+        }
+        
+        .notification {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            animation: slideIn 0.5s ease forwards, slideOut 0.5s ease 4.5s forwards;
+            opacity: 0;
+        }
+        
+        .notification.success {
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .notification.error {
+            border-left: 4px solid #d32f2f;
+        }
+        
+        .notification .icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        .notification.success .icon {
+            color: var(--primary-color);
+        }
+        
+        .notification.error .icon {
+            color: #d32f2f;
+        }
+        
+        .notification .message {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .card {
+                max-width: 100%;
+            }
+            
+            .qr-code {
+                width: 180px;
+                height: 180px;
+            }
+            
+            .slip-result {
+                flex-direction: column;
+            }
+            
+            .slip-image-container {
+                width: 100%;
+                height: 180px;
+                margin-bottom: 15px;
+            }
+            
+            .notification-container {
+                width: 90%;
+                right: 5%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>QR Payment System</h1>
+            <p>สร้างและตรวจสอบ QR Code สำหรับชำระเงิน</p>
+        </div>
+        
+        <div class="credit-container">
+            <div class="credit-amount">เครดิต: <span id="creditAmount">0</span> บาท</div>
+        </div>
+        
+        <div class="main-content">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">💰</span> สร้าง QR Code สำหรับชำระเงิน
+                </div>
+                
+                <div class="form-group">
+                    <label for="amount">จำนวนเงิน (บาท, จำนวนเต็ม)</label>
+                    <input type="number" id="amount" class="form-control" placeholder="0" step="1">
+                </div>
+                
+                <button id="generateBtn" class="btn">สร้าง QR Code</button>
+                
+                <div id="qrResult" class="qr-container" style="display: none;">
+                    <div class="qr-amount">฿ <span id="displayAmount">0.00</span></div>
+                    <div class="qr-info">สแกน QR Code ด้วยแอปธนาคารของคุณ</div>
+                    
+                    <div class="qr-code">
+                        <img id="imgqr" src="" alt="QR Code">
+                    </div>
+                    
+                    <div class="qr-info">รองรับทุกธนาคารและ e-Wallet</div>
+                    
+                    <div class="bank-logos">
+                        <img class="bank-logo" src="img/kplus.png" alt="KBank">
+                        <img class="bank-logo" src="img/scb.png" alt="SCB">
+                        <img class="bank-logo" src="img/bbl.jpg" alt="BBL">
+                        <img class="bank-logo" src="img/ktb.png" alt="KTB">
+                        <img class="bank-logo" src="img/PromptPay.png" alt="PromptPay">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">📝</span> ตรวจสอบสลิปเพื่อเติมเครดิต
+                </div>
+                
+                <form id="slipForm">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📎</div>
+                        <div class="upload-text">คลิกเพื่ออัปโหลดสลิป</div>
+                        <input type="file" id="slipInput" name="slip" accept="image/jpeg,image/png" class="file-input">
+                    </div>
+                    
+                    <button type="submit" class="btn">ตรวจสอบสลิป</button>
+                </form>
+                
+                <div id="slipVerification" class="slip-verification">
+                    <div class="verification-header">
+                        <span class="icon">🧾</span> ผลการตรวจสอบสลิป
+                    </div>
+                    
+                    <div class="slip-result">
+                        <div class="slip-image-container">
+                            <img id="slipImage" class="slip-image" src="" alt="Slip Image">
+                        </div>
+                        
+                        <div class="slip-details">
+                            <div class="slip-detail">
+                                <span class="slip-label">จำนวนเงินจากสลิป</span>
+                                <span class="slip-value" id="slipAmount">฿ 0.00</span>
+                            </div>
+                            <div id="verificationResult" class="slip-status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        const CREDIT_KEY = 'userCredit';
+
+        let credit = parseFloat(localStorage.getItem(CREDIT_KEY)) || 0;
+        let serverChecked = false;
+
+        updateCreditDisplay();
+
+        function updateCreditDisplay() {
+            const creditElement = document.getElementById('creditAmount');
+            if (creditElement) {
+                creditElement.textContent = credit.toFixed(2);
+                localStorage.setItem(CREDIT_KEY, credit.toString());
+            }
+        }
+
+        function addCredit(amount) {
+            credit += amount;
+            updateCreditDisplay();
+        }
+
+        function resetForm() {
+            const slipForm = document.getElementById('slipForm');
+            const uploadArea = document.getElementById('uploadArea');
+            if (slipForm && uploadArea) {
+                slipForm.reset();
+                uploadArea.querySelector('.upload-text').textContent = 'คลิกเพื่ออัปโหลดสลิป';
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notificationContainer = document.getElementById('notificationContainer');
+            if (notificationContainer) {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <span class="icon">${type === 'success' ? '✓' : '✗'}</span>
+                    <div class="message">${message.replace(/\n/g, '<br>')}</div>
+                `;
+                notificationContainer.appendChild(notification);
+                setTimeout(() => notification.remove(), 5000);
+            }
+        }
+
+        async function checkServerHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (!response.ok) throw new Error('Health check failed');
+                const data = await response.json();
+                return data.status === 'OK';
+            } catch (error) {
+                return false;
+            }
+        }
+
+        if (!serverChecked) {
+            checkServerHealth().then(isHealthy => {
+                if (!isHealthy) {
+                    showNotification('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่อ', 'error');
+                }
+                serverChecked = true;
+            });
+        }
+
+        function formatAmount(amount) {
+            return new Intl.NumberFormat('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        const generateBtn = document.getElementById('generateBtn');
+        if (generateBtn) {
+            generateBtn.addEventListener('click', async function() {
+                const amountInput = document.getElementById('amount');
+                if (!amountInput) {
+                    showNotification('ไม่พบช่องกรอกจำนวนเงิน', 'error');
+                    return;
+                }
+                const amount = parseFloat(amountInput.value);
+                
+                if (isNaN(amount) || amount <= 0) {
+                    showNotification('กรุณาระบุจำนวนเงินที่ถูกต้อง (จำนวนเต็ม)', 'error');
+                    return;
+                }
+                
+                this.disabled = true;
+                this.innerHTML = 'กำลังสร้าง QR Code...';
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/generateQR`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount })
+                    });
+                    
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    
+                    const data = await response.json();
+                    
+                    if (data.RespCode === 200) {
+                        const displayAmount = document.getElementById('displayAmount');
+                        const imgqr = document.getElementById('imgqr');
+                        const qrResult = document.getElementById('qrResult');
+                        if (displayAmount && imgqr && qrResult) {
+                            displayAmount.textContent = formatAmount(data.Amount);
+                            imgqr.src = data.Result;
+                            qrResult.style.display = 'flex';
+                            qrResult.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                            showNotification('ไม่สามารถแสดง QR Code ได้', 'error');
+                        }
+                    } else {
+                        showNotification(`เกิดข้อผิดพลาด: ${data.RespMassage || 'ไม่สามารถสร้าง QR Code ได้'}`, 'error');
+                    }
+                } catch (error) {
+                    showNotification('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง', 'error');
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = 'สร้าง QR Code';
+                }
+            });
+        }
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('slipInput');
+        
+        if (uploadArea && fileInput) {
+            uploadArea.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    uploadArea.querySelector('.upload-text').textContent = 'ไฟล์ที่เลือก: ' + fileInput.files[0].name;
+                }
+            });
+        }
+
+        const slipForm = document.getElementById('slipForm');
+        if (slipForm) {
+            slipForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (!submitBtn) {
+                    showNotification('ไม่พบปุ่มส่งฟอร์ม', 'error');
+                    return;
+                }
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'กำลังตรวจสอบสลิป...';
+                
+                const file = fileInput.files[0];
+                if (!file) {
+                    showNotification('กรุณาอัปโหลดรูปสลิป', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'ตรวจสอบสลิป';
+                    return;
+                }
+
+                const slipVerification = document.getElementById('slipVerification');
+                const slipImage = document.getElementById('slipImage');
+                const slipAmountEl = document.getElementById('slipAmount');
+                const verificationResult = document.getElementById('verificationResult');
+
+                if (slipVerification && slipImage && slipAmountEl && verificationResult) {
+                    slipImage.src = URL.createObjectURL(file);
+                    slipAmountEl.textContent = '฿ กำลังตรวจสอบ...';
+                    verificationResult.className = 'slip-status';
+                    verificationResult.textContent = 'กำลังตรวจสอบ...';
+                    slipVerification.style.display = 'block';
+                    slipVerification.scrollIntoView({ behavior: 'smooth' });
+                }
+
+                try {
+                    const { data: { text } } = await Tesseract.recognize(file, 'eng');
+                    const amountRegex = /\d+\.\d{2}/;
+                    const match = text.match(amountRegex);
+                    const slipAmount = match ? match[0] : null;
+                    
+                    if (!slipAmount) throw new Error('ไม่พบจำนวนเงินในสลิป');
+
+                    const formData = new FormData();
+                    formData.append('slip', file);
+                    formData.append('amount', slipAmount);
+
+                    const response = await fetch(`${API_BASE_URL}/upload-slip`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        if (slipAmountEl && verificationResult) {
+                            slipAmountEl.textContent = `฿ ${formatAmount(data.slipAmount)}`;
+                            verificationResult.className = data.verification.isValid ? 'slip-status status-success' : 'slip-status status-error';
+                            verificationResult.textContent = data.verification.isValid ? '✓ การตรวจสอบสลิปสำเร็จ' : '✗ การตรวจสอบสลิปไม่ผ่าน: ' + data.verification.messages.join(', ');
+                            
+                            if (data.verification.isValid) {
+                                const amountToAdd = parseFloat(data.slipAmount);
+                                addCredit(amountToAdd);
+                                showNotification(`การตรวจสอบสลิปสำเร็จ!\nเพิ่มเครดิต ${amountToAdd.toFixed(2)} บาท\nเครดิตปัจจุบัน: ${credit.toFixed(2)} บาท`, 'success');
+                            } else {
+                                showNotification('การตรวจสอบสลิปไม่ผ่าน!\n' + data.verification.messages.join('\n'), 'error');
+                            }
+                        }
+                    } else {
+                        if (verificationResult) {
+                            verificationResult.className = 'slip-status status-error';
+                            verificationResult.textContent = `✗ เกิดข้อผิดพลาด: ${data.message || 'ไม่สามารถตรวจสอบสลิปได้'}`;
+                        }
+                        showNotification(`เกิดข้อผิดพลาด: ${data.message || 'ไม่สามารถตรวจสอบสลิปได้'}`, 'error');
+                    }
+                } catch (error) {
+                    if (slipAmountEl && verificationResult) {
+                        slipAmountEl.textContent = '฿ ไม่พบจำนวนเงิน';
+                        verificationResult.className = 'slip-status status-error';
+                        verificationResult.textContent = '✗ การตรวจสอบล้มเหลว: ' + error.message;
+                    }
+                    showNotification('เกิดข้อผิดพลาดในการตรวจสอบสลิป: ' + error.message, 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'ตรวจสอบสลิป';
+                    resetForm();
+                }
+            });
+        }
+
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#03a651';
+                uploadArea.style.backgroundColor = 'rgba(3, 166, 81, 0.05)';
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.style.borderColor = '#ccc';
+                uploadArea.style.backgroundColor = 'transparent';
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#ccc';
+                uploadArea.style.backgroundColor = 'transparent';
+                if (e.dataTransfer.files.length > 0 && fileInput) {
+                    fileInput.files = e.dataTransfer.files;
+                    uploadArea.querySelector('.upload-text').textContent = 'ไฟล์ที่เลือก: ' + e.dataTransfer.files[0].name;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

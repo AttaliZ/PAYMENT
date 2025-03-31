@@ -1,0 +1,27 @@
+{
+  "name": "payment-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "0": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "lodash": "^4.17.21",
+    "multer": "^1.4.5-lts.2",
+    "nodemon": "^3.1.9",
+    "promptpay-qr": "^0.5.0",
+    "punycode": "^2.3.1",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.5",
+    "tesseract.js": "^6.0.0"
+  }
+}
