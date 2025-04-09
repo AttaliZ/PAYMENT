@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const QRCode = require('qrcode');
 const generatePayload = require('promptpay-qr');
@@ -11,7 +12,7 @@ const fs = require('fs').promises;
 const app = express();
 
 app.use(cors({
-    origin: 'http://127.0.0.1:5500',
+    origin: ['http://127.0.0.1:5500', 'http://localhost:5500'],
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type'],
 }));
@@ -27,7 +28,7 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-const UPLOAD_DIR = 'uploads/';
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
 (async () => {
     try {
         await fs.mkdir(UPLOAD_DIR, { recursive: true });
@@ -52,7 +53,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/png'];
+        const allowedTypes = ['image/jpeg', 'image/png']  
         if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
@@ -84,7 +85,7 @@ app.post('/generateQR', async (req, res) => {
         const decimalPart = generateRandomDecimal();
         const finalAmount = parseFloat(`${Math.floor(amount)}.${decimalPart}`);
 
-        const mobileNumber = 'เบอร์ของคุณ';
+        const mobileNumber = process.env.PROMPTPAY_NUMBER || '0946737973';
         const payload = generatePayload(mobileNumber, { amount: finalAmount });
         const options = {
             color: {
